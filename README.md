@@ -1,7 +1,7 @@
 # Azure Fault Domains on DCOS Nodes
 
 We recently ported a Cassandra cluster to a DCOS cluster running in Azure.
-Cassandra requieres knowledge about the rack a node is running in to place replicas ??? properly (link). 
+Cassandra requieres knowledge about the rack a node is running in to place keyspace replicas properly (link). 
 
 In Azure, we have the metadata endpoint which will provide information about the fault domain (FD) a VM is running in - which corresponds to the rack information that Cassandra needs. I've seen a couple of different approaches how to make this work in DCOS clusters.
 
@@ -27,6 +27,15 @@ echo "MESOS_ATTRIBUTES=rack:rack$fd" >> /var/lib/dcos/mesos-slave-common
 ```
 
 Now a deployment can target a VM in a fault domain with [marathon contraints](https://mesosphere.github.io/marathon/docs/constraints.html) like:
+
+```
+$ curl -X POST -H "Content-type: application/json" localhost:8080/v2/apps -d '{
+    "id": "sleep-group-by",
+    "cmd": "sleep 60",
+    "instances": 3,
+    "constraints": [["rack", "LIKE", "rack0"]]
+  }'
+```
 
 Alternatively, a Cassandra container starting up could query the metadata endpoint directly upon startup and write the rack property to ```$CASS_HOME/conf/cassandra-rackdc.properties```.
 The call to the metadata endpoint can easily be added to the container
