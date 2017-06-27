@@ -3,7 +3,7 @@
 We recently ported a Cassandra cluster to a DCOS cluster running in Azure.
 Cassandra requieres knowledge about the rack a node is running in to place keyspace replicas properly (link). 
 
-In Azure, we have the metadata endpoint which will provide information about the fault domain (FD) a VM is running in - which corresponds to the rack information that Cassandra needs. I've seen a couple of different approaches how to make this work in DCOS clusters.
+In Azure, we have the [Metadata Service](https://docs.microsoft.com/en-us/azure/virtual-machines/virtual-machines-instancemetadataservice-overview) which will provide information about the fault domain (FD) a VM is running in - which corresponds to the rack information that Cassandra needs. I've seen a couple of different approaches how to make this work in DCOS clusters.
 
 1. Some customers have containers with HA config baked in already and want to target specific agents for deployment
 2. Other customers want containers to configure themselves at start up.  
@@ -17,10 +17,8 @@ For the first approach, configuring placement constraints, we can add a few line
 Attributes are stored in ```/var/lib/dcos/mesos-slave-common```.
 
 ```
-meta=$( curl http://169.254.169.254/metadata/v1/InstanceInfo )
-
-ud=$( echo $meta | cut -d\" -f 8)
-fd=$( echo $meta | cut -d\" -f 12)
+ud=$( curl -H Metadata:true "http://169.254.169.254/metadata/instance/compute/platformUpdateDomain?api-version=2017-04-02&format=text" )
+fd=$( curl -H Metadata:true "http://169.254.169.254/metadata/instance/compute/platformFaultDomain?api-version=2017-04-02&format=text" )
 
 mkdir -p  /var/lib/dcos
 echo "MESOS_ATTRIBUTES=rack:rack$fd" >> /var/lib/dcos/mesos-slave-common

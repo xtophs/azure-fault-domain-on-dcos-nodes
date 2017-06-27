@@ -2,10 +2,8 @@
 set -e
 
 echo checking metadata
-meta=$( curl http://169.254.169.254/metadata/v1/InstanceInfo )
-echo got $meta
-
-fd=$( echo $meta | cut -d\" -f 12)
+fd=$( "http://169.254.169.254/metadata/instance/compute/platformFaultDomain?api-version=2017-04-02&format=text" )
+echo got fault domain $fd
 
 if [ -z $fd ]
 then
